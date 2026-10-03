@@ -1,0 +1,37 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Виртуальные окружения ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Сборка и метаданные ---
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Тесты и кэш ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Редакторы и IDE ---
+.vscode/
+.idea/
+*.swp
+
+# --- ОС ---
+.DS_Store
+Thumbs.db
+desktop.ini
