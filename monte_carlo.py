@@ -2,12 +2,14 @@
 """
 Monte Carlo simulations: coin flip and dice roll.
 
-Sections
+Sections printed to the console
   1. Coin flip: law of large numbers
   2. One die: frequencies + chi-square goodness-of-fit test
   3. Two dice: distribution of the sum (empirical vs theory)
-  4. Expected value: convergence, and a "casino game" ruin demo
-  5. Chart (PNG) drawn with Pillow
+  4. Expected value: convergence of the running mean
+  5. A game with negative expected value, and a ruin demo
+
+Then a chart (PNG) is drawn with Pillow.
 
 Run:  python monte_carlo.py
 """
@@ -195,8 +197,7 @@ def make_chart(path: str, ns, reps_fracs, faces, emp, theory, n_throws: int) -> 
     for e in range(2, 7):
         xx = X(10 ** e)
         d.line([xx, y0, xx, y1], fill=GRID)
-        d.text((xx, y1 + 18), f"$10^{e}$" if False else f"1e{e}", font=f_axis,
-               fill=FG, anchor="mm")
+        d.text((xx, y1 + 18), f"1e{e}", font=f_axis, fill=FG, anchor="mm")
     d.text(((x0 + x1) / 2, y1 + 44), "number of flips (log scale)",
            font=f_axis, fill=FG, anchor="mm")
     d.text((x0 - 10, y0 - 16), "heads", font=f_axis, fill=FG, anchor="rm")
@@ -208,11 +209,11 @@ def make_chart(path: str, ns, reps_fracs, faces, emp, theory, n_throws: int) -> 
     d.polygon(list(zip([X(n) for n in band_n], upper)) + list(zip([X(n) for n in band_n], lower)),
               fill=(238, 242, 250))
 
-    # dots of individual experiments
+    # dots of individual experiments (clamped, so nothing is drawn outside the axes)
     for i, n in enumerate(ns):
         xx = X(n)
-        for f in reps_fracs[:, i]:
-            yy = Y(f)
+        for frac in reps_fracs[:, i]:
+            yy = min(max(Y(frac), y0 + 3), y1 - 3)
             d.ellipse([xx - 2.5, yy - 2.5, xx + 2.5, yy + 2.5], fill=LBLUE)
     # mean of the runs
     pts = [(X(n), Y(reps_fracs[:, i].mean())) for i, n in enumerate(ns)]
@@ -221,15 +222,22 @@ def make_chart(path: str, ns, reps_fracs, faces, emp, theory, n_throws: int) -> 
         d.ellipse([px - 4.5, py - 4.5, px + 4.5, py + 4.5], fill=BLUE)
     d.line([x0, Y(0.5), x1, Y(0.5)], fill=(120, 128, 140), width=1)
 
-    ly = y0 + 14
-    d.ellipse([x0 + 12, ly - 4, x0 + 20, ly + 4], fill=LBLUE)
-    d.text((x0 + 28, ly), "one experiment", font=f_small, fill=FG, anchor="lm")
-    ly += 20
-    d.ellipse([x0 + 12, ly - 4, x0 + 20, ly + 4], fill=BLUE)
-    d.text((x0 + 28, ly), "mean of 30 experiments", font=f_small, fill=FG, anchor="lm")
-    ly += 20
-    d.rectangle([x0 + 11, ly - 6, x0 + 21, ly + 6], fill=(238, 242, 250), outline=GRID)
-    d.text((x0 + 28, ly), "theoretical +/-2 standard errors", font=f_small, fill=FG, anchor="lm")
+    # legend on a white panel, otherwise the +/-2 SE band shows through the text
+    legend = [
+        ("dot", LBLUE, "one experiment"),
+        ("dot", BLUE, "mean of 30 experiments"),
+        ("box", (238, 242, 250), "theoretical +/-2 standard errors"),
+    ]
+    lx, ly0, lh = x0 + 8, y0 + 10, 20
+    d.rectangle([lx, ly0, lx + 268, ly0 + lh * len(legend) + 8],
+                fill=(255, 255, 255), outline=(205, 210, 218))
+    for k, (kind, colour, label) in enumerate(legend):
+        cy = ly0 + 4 + lh * k + lh // 2
+        if kind == "dot":
+            d.ellipse([lx + 12, cy - 4, lx + 20, cy + 4], fill=colour)
+        else:
+            d.rectangle([lx + 11, cy - 6, lx + 21, cy + 6], fill=colour, outline=GRID)
+        d.text((lx + 28, cy), label, font=f_small, fill=FG, anchor="lm")
 
     # ---------------- right panel: two dice ----------------
     rx0, ry0, rx1, ry1 = 736, 96, 1180, 560
